@@ -146,9 +146,17 @@ class music_cog(commands.Cog):
         length_seconds = data['duration']
         length_minutes = length_seconds // 60
         length_seconds %= 60
+        length_hours = length_minutes // 60
+        length_minutes %= 60
+
+        if length_hours > 0:
+            length_formatted = f"{length_hours}:{length_minutes:02}:{length_seconds:02}"
+        else:
+            length_formatted = f"{length_minutes}:{length_seconds:02}"
+        
         embed = discord.Embed(title="현재 재생 중", color=discord.Color(0xF3F781))
         embed.add_field(name="제목", value=f"{title}")
-        embed.add_field(name="길이", value=f"{length_minutes}:{length_seconds:02}")
+        embed.add_field(name="길이", value=length_formatted)
         embed.add_field(name="요청자", value=f"{requester_name}")
         embed.set_image(url=data['thumbnail'])
         if next_song:
