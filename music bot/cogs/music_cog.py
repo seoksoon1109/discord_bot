@@ -6,7 +6,7 @@ from yt_dlp import YoutubeDL
 import asyncio
 import json
 
-SETTINGS_FILE = 'settings.json'
+SETTINGS_FILE = 'music bot/settings.json'
 
 class music_cog(commands.Cog):
     def __init__(self, bot):

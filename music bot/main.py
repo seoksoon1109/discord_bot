@@ -18,7 +18,7 @@ async def on_ready():
     print(f'Logged in as {bot.user}')
 
 async def load_extensions():
-    for file in os.listdir("cogs"):
+    for file in os.listdir("music bot/cogs"):
         if file.endswith(".py"):
             await bot.load_extension(f"cogs.{file[:-3]}")
 
@@ -36,7 +36,7 @@ async def reload_extension(ctx, extension=None):
         else:
             await ctx.send(f":white_check_mark: '{extension}'을(를) 다시 불러왔습니다!")
     else:
-        for filename in os.listdir("cogs"):
+        for filename in os.listdir("music bot/cogs"):
             if filename.endswith(".py"):
                 await unload_function(filename[:-3])
                 try:
@@ -65,7 +65,7 @@ async def unload_function(extension=None):
         except (commands.ExtensionNotLoaded, commands.ExtensionNotFound):
             pass
     else:
-        for file in os.listdir("cogs"):
+        for file in os.listdir("music bot/cogs"):
             if file.endswith(".py"):
                 try:
                     await bot.unload_extension(f"cogs.{file[:-3]}")
@@ -76,7 +76,7 @@ async def unload_function(extension=None):
 async def main():
     async with bot:
         await load_extensions()
-        file = open("discord_token.txt")
+        file = open("music bot/discord_token.txt")
         token = file.readline()
         file.close()
         await bot.start(token)
