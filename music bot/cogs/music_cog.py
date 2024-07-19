@@ -129,6 +129,7 @@ class music_cog(commands.Cog):
         # mainMessage의 ID를 저장
         self._save_main_message()
         await interaction.response.send_message(f"#{interaction.channel.id} 채널로 설정되었습니다!", ephemeral=True)
+        await self.setup_message_and_main_message()
 
     def search_yt(self, item):
         if item.startswith("https://"):
