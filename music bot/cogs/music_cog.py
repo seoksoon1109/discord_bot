@@ -86,9 +86,9 @@ class music_cog(commands.Cog):
     def create_view(self, guild_id):
         view = ui.View()
         view.add_item(ui.Button(label="⏹️", style=ButtonStyle.danger, custom_id="stop"))
-        view.add_item(ui.Button(label="⏸️", style=ButtonStyle.primary, custom_id="pause"))
-        view.add_item(ui.Button(label="▶️", style=ButtonStyle.success, custom_id="resume"))
+        view.add_item(ui.Button(label="▶️", style=ButtonStyle.green, custom_id="play"))
         view.add_item(ui.Button(label="⏭️", style=ButtonStyle.secondary, custom_id="skip"))
+        view.add_item(ui.Button(label="🔀", style=ButtonStyle.success, custom_id="shuffle"))
         view.add_item(self.create_select_menu(guild_id))
         return view
 
@@ -253,24 +253,18 @@ class music_cog(commands.Cog):
                     await interaction.response.send_message('재생 중 일때만 정지할 수 있습니다.', ephemeral=True)
                     return
 
-            elif custom_id == 'pause':
-                if self.vcs.get(guild_id) and self.vcs[guild_id].is_playing():
-                    self.vcs[guild_id].pause()
-                    self.is_paused[guild_id] = True
-                    await interaction.response.send_message('재생을 일시정지합니다.', ephemeral=True)
-                    return
+            elif custom_id == 'play':
+                if self.vcs.get[guild_id]:
+                    if self.vcs.get(guild_id) and self.vcs[guild_id].is_playing():
+                        self.vcs[guild_id].pause()
+                        self.is_paused[guild_id] = True
+                        await interaction.response.send_message('재생을 일시정지합니다.', ephemeral=True)
+                    elif self.vcs.get(guild_id) and self.vcs[guild_id].is_paused():
+                        self.vcs[guild_id].resume()
+                        self.is_paused[guild_id] = False
+                        await interaction.response.send_message('다시 재생합니다.', ephemeral=True)
                 else:
-                    await interaction.response.send_message('재생 중 일때만 일시정지할 수 있습니다.', ephemeral=True)
-                    return
-
-            elif custom_id == 'resume':
-                if self.vcs.get(guild_id) and self.vcs[guild_id].is_paused():
-                    self.vcs[guild_id].resume()
-                    self.is_paused[guild_id] = False
-                    await interaction.response.send_message('다시 재생합니다.', ephemeral=True)
-                    return
-                else:
-                    await interaction.response.send_message('일시정지 중이 아닙니다.', ephemeral=True)
+                    await interaction.response.send_message('재생 중이 아닙니다.', ephemeral=True)
                     return
 
             elif custom_id == 'skip':
