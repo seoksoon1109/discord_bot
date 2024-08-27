@@ -1,4 +1,4 @@
-import discord
+import discord, random
 from discord.ext import commands
 from discord import ButtonStyle, SelectOption, ui, app_commands
 from youtubesearchpython import VideosSearch
@@ -6,7 +6,7 @@ from yt_dlp import YoutubeDL
 import asyncio
 import json
 
-SETTINGS_FILE = 'music bot/settings.json'
+SETTINGS_FILE = 'settings.json'
 
 class music_cog(commands.Cog):
     def __init__(self, bot):
@@ -217,7 +217,11 @@ class music_cog(commands.Cog):
             voice_channel = self.music_queue[guild_id][0][1].voice.channel
             requester_name = self.music_queue[guild_id][0][1].display_name
             if self.vcs.get(guild_id) == None or not self.vcs[guild_id].is_connected():
-                self.vcs[guild_id] = await voice_channel.connect()
+                try:
+                    self.vcs[guild_id] = await voice_channel.connect()
+                    print(f"Connected to {voice_channel.name} in guild {interaction.guild.name}.")
+                except Exception as e:
+                    print(f"Failed to connect to {voice_channel.name}: {e}")
                 if self.vcs[guild_id] == None:
                     await interaction.response.send_message('음성 채널에 연결할 수 없습니다.', ephemeral=True)
                     return
@@ -280,6 +284,16 @@ class music_cog(commands.Cog):
                     return
                 else:
                     await interaction.response.send_message('재생 중 일때만 스킵할 수 있습니다.', ephemeral=True)
+                    return
+                
+            elif custom_id == 'shuffle':
+                if len(self.music_queue.get(guild_id))>1:
+                    queue = random.shuffle(self.music_queue.get(guild_id))
+                    self.music_queue[guild_id] = queue
+                    await interaction.response.send_message('셔플이 완료되었습니다.', ephemeral = True)
+                    return
+                else:
+                    await interaction.response.send_message('재생 목록이 1곡 이하일 경우 사용할 수 없습니다', ephemeral=True)
                     return
 
             elif custom_id == 'select_song':
