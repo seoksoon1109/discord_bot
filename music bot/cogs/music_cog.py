@@ -99,7 +99,7 @@ class music_cog(commands.Cog):
             select = ui.Select(placeholder="재생 목록이 비어 있습니다.", options=options, custom_id="select_song", disabled=True)
         else:
             for idx, (song, requester) in enumerate(self.music_queue.get(guild_id)):
-                options.append(SelectOption(label=song['title'], description=f"Requested by {requester.display_name}", value=str(idx)))
+                options.append(SelectOption(label=str(idx+1)+". "+song['title'], description=f"Requested by {requester.display_name}", value=str(idx)))
             select = ui.Select(placeholder="곡 선택", options=options, custom_id="select_song")
         return select
 
@@ -281,17 +281,14 @@ class music_cog(commands.Cog):
                 if self.vcs.get(guild_id) and self.vcs[guild_id].is_playing():
                     self.vcs[guild_id].stop()
                     await interaction.response.send_message('다음 곡을 재생합니다.', ephemeral=True)
-                    return
                 else:
                     await interaction.response.send_message('재생 중 일때만 스킵할 수 있습니다.', ephemeral=True)
                     return
                 
             elif custom_id == 'shuffle':
                 if len(self.music_queue.get(guild_id))>1:
-                    queue = random.shuffle(self.music_queue.get(guild_id))
-                    self.music_queue[guild_id] = queue
+                    random.shuffle(self.music_queue[guild_id])
                     await interaction.response.send_message('셔플이 완료되었습니다.', ephemeral = True)
-                    return
                 else:
                     await interaction.response.send_message('재생 목록이 1곡 이하일 경우 사용할 수 없습니다', ephemeral=True)
                     return
