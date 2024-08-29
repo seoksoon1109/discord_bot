@@ -20,6 +20,7 @@ class music_cog(commands.Cog):
         self.is_paused = {}    # 각 서버별 일시정지 여부 딕셔너리
         self.channel = {}      # 각 서버별 채널 정보 딕셔너리
         self.vcs = {}         # 각 서버별 음성 클라이언트 딕셔너리
+        self.timer = {}
         self.music_queue = {}
         self.YDL_OPTIONS = {
             'format': 'bestaudio/best',
@@ -41,6 +42,22 @@ class music_cog(commands.Cog):
         self.ytdl = YoutubeDL(self.YDL_OPTIONS)
         asyncio.create_task(self.setup_message_and_main_message())
 
+    async def start_timer(self, guild_id, delay = 300):
+        print(f"{guild_id}의 타이머가 시작되었습니다.")
+        await asyncio.sleep(delay)
+
+        if guild_id in self.vcs:
+            await self.vcs[guild_id].disconnect()
+            del self.vcs[guild_id]
+            del self.is_playing[guild_id]
+            del self.is_paused[guild_id]
+            del self.music_queue[guild_id]
+            print(f"자동 연결 끊기: 서버 {guild_id}에서 음성 채널 연결이 종료되었습니다.")
+
+    async def reset_timer(self, guild_id):
+        if guild_id in self.timer:
+            self.timer[guild_id].cancel()
+            print(f"{guild_id}의 타이머가 종료되었습니다.")
 
     async def setup_message_and_main_message(self):
         await self.bot.wait_until_ready()
@@ -166,24 +183,6 @@ class music_cog(commands.Cog):
         self.mainEmbed = embed
         await self.update_main_message(guild_id)
 
-    async def play_next(self):
-        for guild_id, vcs in self.vcs.items():
-            if vcs and guild_id in self.music_queue and len(self.music_queue[guild_id]) > 0:
-                self.is_playing[guild_id] = True
-                song_data = self.music_queue[guild_id][0][0]
-                requester_name = self.music_queue[guild_id][0][1].display_name
-                self.music_queue[guild_id].pop(0)
-                loop = asyncio.get_event_loop()
-                data = await loop.run_in_executor(None, lambda: self.ytdl.extract_info(song_data['source'], download=False))
-                song_url = data['url']
-                next_song = self.music_queue[guild_id][0][0] if len(self.music_queue[guild_id]) > 0 else None
-                vcs.play(discord.FFmpegPCMAudio(song_url, **self.FFMPEG_OPTIONS), after=lambda e: asyncio.run_coroutine_threadsafe(self.play_next(), self.bot.loop))
-                await self.song_update(guild_id, data, requester_name, next_song)
-            else:
-                self.is_playing[guild_id] = False
-                message = self.mainMessages.get(guild_id)
-                await message.edit(embed = self.defaultEmbed)
-
     @app_commands.command(name="play", description="Plays a selected song from youtube")
     async def play(self, interaction: discord.Interaction, *, title_or_url: str):
         try:
@@ -204,6 +203,7 @@ class music_cog(commands.Cog):
                     self.music_queue[guild_id] = []
                 self.music_queue[guild_id].append([song, interaction.user])
                 await interaction.response.send_message(f"'{song['title']}' 재생목록에 추가되었습니다.", ephemeral=True)
+                await self.reset_timer(guild_id)
                 if not self.is_playing.get(guild_id):
                     await self.play_music(interaction)
                 else:
@@ -213,9 +213,9 @@ class music_cog(commands.Cog):
         guild_id = str(interaction.guild.id)
         if len(self.music_queue[guild_id]) > 0:
             self.is_playing[guild_id] = True
-            song_data = self.music_queue[guild_id][0][0]
             voice_channel = self.music_queue[guild_id][0][1].voice.channel
-            requester_name = self.music_queue[guild_id][0][1].display_name
+            
+            # 음성 채널 연결
             if self.vcs.get(guild_id) == None or not self.vcs[guild_id].is_connected():
                 try:
                     self.vcs[guild_id] = await voice_channel.connect()
@@ -227,16 +227,30 @@ class music_cog(commands.Cog):
                     return
             else:
                 await self.vcs[guild_id].move_to(voice_channel)
-            self.music_queue[guild_id].pop(0)
 
-            loop = asyncio.get_event_loop()
-            data = await loop.run_in_executor(None, lambda: self.ytdl.extract_info(song_data['source'], download=False))
-            song_url = data['url']
-            next_song = self.music_queue[guild_id][0][0] if len(self.music_queue[guild_id]) > 0 else None
-            self.vcs[guild_id].play(discord.FFmpegPCMAudio(song_url, **self.FFMPEG_OPTIONS), after=lambda e: asyncio.run_coroutine_threadsafe(self.play_next(), self.bot.loop))
-            await self.song_update(guild_id, data, requester_name, next_song)
-        else:
-            self.is_playing[guild_id] = False
+            await self.play_next()  # 이후의 재생은 play_next에 맡김
+
+    async def play_next(self):
+        for guild_id, vcs in self.vcs.items():
+            if vcs and guild_id in self.music_queue and len(self.music_queue[guild_id]) > 0:
+                self.is_playing[guild_id] = True
+                song_data = self.music_queue[guild_id][0][0]
+                requester_name = self.music_queue[guild_id][0][1].display_name
+                self.music_queue[guild_id].pop(0)
+                loop = asyncio.get_event_loop()
+                data = await loop.run_in_executor(None, lambda: self.ytdl.extract_info(song_data['source'], download=False))
+                song_url = data['url']
+                next_song = self.music_queue[guild_id][0][0] if len(self.music_queue[guild_id]) > 0 else None
+                vcs.play(discord.FFmpegPCMAudio(song_url, **self.FFMPEG_OPTIONS), after=lambda e: asyncio.run_coroutine_threadsafe(self.play_next(), self.bot.loop))
+                await self.song_update(guild_id, data, requester_name, next_song)
+            else:
+                self.is_playing[guild_id] = False
+                await self.start_timer(guild_id)
+                if guild_id in self.mainMessages:
+                    message = self.mainMessages[guild_id]
+                    await message.edit(embed=self.defaultEmbed, view=self.create_view(guild_id))
+                else:
+                    print(f"Main message not found for guild {guild_id}")
 
     @commands.Cog.listener()
     async def on_interaction(self, interaction: discord.Interaction):
@@ -280,7 +294,7 @@ class music_cog(commands.Cog):
             elif custom_id == 'skip':
                 if self.vcs.get(guild_id) and self.vcs[guild_id].is_playing():
                     self.vcs[guild_id].stop()
-                    await interaction.response.send_message('다음 곡을 재생합니다.', ephemeral=True)
+                    await interaction.response.send_message('재생 중인 곡을 스킵했습니다.', ephemeral=True)
                 else:
                     await interaction.response.send_message('재생 중 일때만 스킵할 수 있습니다.', ephemeral=True)
                     return
