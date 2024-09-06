@@ -43,15 +43,15 @@ class music_cog(commands.Cog):
         asyncio.create_task(self.setup_message_and_main_message())
         
         
-    async def print_message(self, guild_id, string, time):
+    async def send_message(self, guild_id, string, time):
         message = self.mainMessages.get(guild_id)
         if message:
             channel = message.channel
             if time:
-                channel.send(string, delete_after = time)
+                await channel.send(string, delete_after = time)
                 print("메세지 출력 완료")
             else:
-                channel.send(string)
+                await channel.send(string)
                 print("메세지 출력 완료")
         else:
             print(f"{guild_id}의 메세지를 찾을 수 없습니다.")
@@ -67,6 +67,7 @@ class music_cog(commands.Cog):
             del self.is_playing[guild_id]
             del self.is_paused[guild_id]
             del self.music_queue[guild_id]
+            await self.send_message(guild_id, "5분간 사용하지 않아 자동으로 연결이 종료되었습니다.", 10)
             print(f"자동 연결 끊기: 서버 {guild_id}에서 음성 채널 연결이 종료되었습니다.")
 
     async def reset_timer(self, guild_id):
