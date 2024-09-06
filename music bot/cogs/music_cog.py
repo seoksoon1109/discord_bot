@@ -41,6 +41,21 @@ class music_cog(commands.Cog):
         }
         self.ytdl = YoutubeDL(self.YDL_OPTIONS)
         asyncio.create_task(self.setup_message_and_main_message())
+        
+        
+    async def print_message(self, guild_id, string, time):
+        message = self.mainMessages.get(guild_id)
+        if message:
+            channel = message.channel
+            if time:
+                channel.send(string, delete_after = time)
+                print("메세지 출력 완료")
+            else:
+                channel.send(string)
+                print("메세지 출력 완료")
+        else:
+            print(f"{guild_id}의 메세지를 찾을 수 없습니다.")
+            return
 
     async def start_timer(self, guild_id, delay = 300):
         print(f"{guild_id}의 타이머가 시작되었습니다.")
