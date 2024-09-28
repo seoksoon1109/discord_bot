@@ -20,7 +20,6 @@ class music_cog(commands.Cog):
         self.is_paused = {}    # 각 서버별 일시정지 여부 딕셔너리
         self.channel = {}      # 각 서버별 채널 정보 딕셔너리
         self.vcs = {}         # 각 서버별 음성 클라이언트 딕셔너리
-        self.timer = {}
         self.music_queue = {}
         self.YDL_OPTIONS = {
             'format': 'bestaudio/best',
@@ -41,23 +40,6 @@ class music_cog(commands.Cog):
         }
         self.ytdl = YoutubeDL(self.YDL_OPTIONS)
         asyncio.create_task(self.setup_message_and_main_message())
-
-    async def start_timer(self, guild_id, delay = 300):
-        print(f"{guild_id}의 타이머가 시작되었습니다.")
-        await asyncio.sleep(delay)
-
-        if guild_id in self.vcs:
-            await self.vcs[guild_id].disconnect()
-            del self.vcs[guild_id]
-            del self.is_playing[guild_id]
-            del self.is_paused[guild_id]
-            del self.music_queue[guild_id]
-            print(f"자동 연결 끊기: 서버 {guild_id}에서 음성 채널 연결이 종료되었습니다.")
-
-    async def reset_timer(self, guild_id):
-        if guild_id in self.timer:
-            self.timer[guild_id].cancel()
-            print(f"{guild_id}의 타이머가 종료되었습니다.")
 
     async def setup_message_and_main_message(self):
         await self.bot.wait_until_ready()
@@ -203,7 +185,6 @@ class music_cog(commands.Cog):
                     self.music_queue[guild_id] = []
                 self.music_queue[guild_id].append([song, interaction.user])
                 await interaction.response.send_message(f"'{song['title']}' 재생목록에 추가되었습니다.", ephemeral=True)
-                await self.reset_timer(guild_id)
                 if not self.is_playing.get(guild_id):
                     await self.play_music(interaction)
                 else:
@@ -245,7 +226,6 @@ class music_cog(commands.Cog):
                 await self.song_update(guild_id, data, requester_name, next_song)
             else:
                 self.is_playing[guild_id] = False
-                await self.start_timer(guild_id)
                 if guild_id in self.mainMessages:
                     message = self.mainMessages[guild_id]
                     await message.edit(embed=self.defaultEmbed, view=self.create_view(guild_id))
