@@ -41,6 +41,26 @@ class music_cog(commands.Cog):
         self.ytdl = YoutubeDL(self.YDL_OPTIONS)
         asyncio.create_task(self.setup_message_and_main_message())
 
+    @commands.Cog.listener()
+    async def on_voice_state_update(self, member, before, after):
+        if member.bot:  # 봇의 상태는 무시
+            return
+        for guild_id, vc in self.vcs.items():
+            if vc and len(vc.channel.members) == 1:  # 봇 혼자만 남았을 때
+                await vc.disconnect()
+                print(f"음성 채널 {vc.channel}에서 나갔습니다.")
+                del self.vcs[guild_id]
+                self.is_playing[guild_id] = False
+                break
+    
+    async def disconnect_voice_channel(self, guild_id):
+        if guild_id in self.vcs:
+            await self.vcs[guild_id].disconnect()
+            del self.vcs[guild_id]
+            del self.is_playing[guild_id]
+            del self.music_queue[guild_id]
+            print(f"자동 연결 끊기: 서버 {guild_id}에서 음성 채널 연결이 종료되었습니다.")
+
     async def setup_message_and_main_message(self):
         await self.bot.wait_until_ready()
         try:
