@@ -147,7 +147,7 @@ class music_cog(commands.Cog):
 
         # mainMessage의 ID를 저장
         self._save_main_message()
-        await interaction.response.send_message(f"#{interaction.channel.id} 채널로 설정되었습니다!", ephemeral=True)
+        await interaction.response.send_message(f"#{interaction.channel.id} 채널로 설정되었습니다!", delete_after=3)
         await self.setup_message_and_main_message()
 
     def search_yt(self, item):
@@ -191,7 +191,7 @@ class music_cog(commands.Cog):
             guild_id = str(interaction.guild.id)
             voice_channel = interaction.user.voice.channel
         except AttributeError:
-            await interaction.response.send_message('음성채널에 입장한 후 사용해 주세요.', ephemeral=True)
+            await interaction.response.send_message('음성채널에 입장한 후 사용해 주세요.', delete_after=3)
             return
 
         if self.is_paused.get(guild_id):
@@ -199,12 +199,12 @@ class music_cog(commands.Cog):
         else:
             song = self.search_yt(title_or_url)
             if type(song) == type(True):
-                await interaction.response.send_message('음원 다운로드 실패. 다른 키워드로 다시 시도해 주세요', ephemeral=True)
+                await interaction.response.send_message('음원 다운로드 실패. 다른 키워드로 다시 시도해 주세요', delete_after=3)
             else:
                 if guild_id not in self.music_queue:
                     self.music_queue[guild_id] = []
                 self.music_queue[guild_id].append([song, interaction.user])
-                await interaction.response.send_message(f"'{song['title']}' 재생목록에 추가되었습니다.", ephemeral=True)
+                await interaction.response.send_message(f"'{song['title']}' 재생목록에 추가되었습니다.", delete_after= 3)
                 if not self.is_playing.get(guild_id):
                     await self.play_music(interaction)
                 else:
@@ -224,7 +224,7 @@ class music_cog(commands.Cog):
                 except Exception as e:
                     print(f"Failed to connect to {voice_channel.name}: {e}")
                 if self.vcs[guild_id] == None:
-                    await interaction.response.send_message('음성 채널에 연결할 수 없습니다.', ephemeral=True)
+                    await interaction.response.send_message('음성 채널에 연결할 수 없습니다.', delete_after=3)
                     return
             else:
                 await self.vcs[guild_id].move_to(voice_channel)
@@ -265,10 +265,10 @@ class music_cog(commands.Cog):
                     self.music_queue[guild_id] = []
                     await self.vcs[guild_id].disconnect()
                     await self.mainMessages[guild_id].edit(embed=self.defaultEmbed, view=self.create_view(guild_id))
-                    await interaction.response.send_message('재생을 중지합니다.', ephemeral=True)
+                    await interaction.response.send_message('재생을 중지합니다.', delete_after=3)
                     return
                 else:
-                    await interaction.response.send_message('재생 중 일때만 정지할 수 있습니다.', ephemeral=True)
+                    await interaction.response.send_message('재생 중 일때만 정지할 수 있습니다.', delete_after=3)
                     return
 
             elif custom_id == 'play':
@@ -278,25 +278,25 @@ class music_cog(commands.Cog):
                     if voice_client.is_playing():
                         voice_client.pause()
                         self.is_paused[guild_id] = True
-                        await interaction.response.send_message('재생을 일시정지합니다.', ephemeral=True)
+                        await interaction.response.send_message('재생을 일시정지합니다.', delete_after=3)
                     
                     elif voice_client.is_paused():
                         voice_client.resume()
                         self.is_paused[guild_id] = False
-                        await interaction.response.send_message('다시 재생합니다.', ephemeral=True)
+                        await interaction.response.send_message('다시 재생합니다.', delete_after=3)
                     
                     else:
-                        await interaction.response.send_message('오류발생', ephemeral=True)
+                        await interaction.response.send_message('오류발생', delete_after=3)
                 else:
-                    await interaction.response.send_message('재생 중이 아닙니다.', ephemeral=True)
+                    await interaction.response.send_message('재생 중이 아닙니다.', delete_after=3)
                     return
 
             elif custom_id == 'skip':
                 if self.vcs.get(guild_id) and self.vcs[guild_id].is_playing():
                     self.vcs[guild_id].stop()
-                    await interaction.response.send_message('재생 중인 곡을 스킵했습니다.', ephemeral=True)
+                    await interaction.response.send_message('재생 중인 곡을 스킵했습니다.', delete_after=3)
                 else:
-                    await interaction.response.send_message('재생 중 일때만 스킵할 수 있습니다.', ephemeral=True)
+                    await interaction.response.send_message('재생 중 일때만 스킵할 수 있습니다.', delete_after=3)
                     return
                 
             elif custom_id == 'shuffle':
@@ -304,7 +304,7 @@ class music_cog(commands.Cog):
                     random.shuffle(self.music_queue[guild_id])
                     await interaction.response.send_message('셔플이 완료되었습니다.', ephemeral = True)
                 else:
-                    await interaction.response.send_message('재생 목록이 1곡 이하일 경우 사용할 수 없습니다', ephemeral=True)
+                    await interaction.response.send_message('재생 목록이 1곡 이하일 경우 사용할 수 없습니다', delete_after=3)
                     return
 
             elif custom_id == 'select_song':
@@ -313,7 +313,7 @@ class music_cog(commands.Cog):
                     self.music_queue[guild_id] = self.music_queue[guild_id][selected_index:] + self.music_queue[guild_id][:selected_index]
                     if self.vcs.get(guild_id):
                         self.vcs[guild_id].stop()
-                    await interaction.response.send_message('선택한 곡으로 건너뜁니다.', ephemeral=True)
+                    await interaction.response.send_message('선택한 곡으로 건너뜁니다.', delete_after=3)
                     return
                 else:
                     return
