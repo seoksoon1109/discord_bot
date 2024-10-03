@@ -129,7 +129,6 @@ class music_cog(commands.Cog):
                 # Ensure bot has permissions to edit messages
                 if message.guild.me.guild_permissions.manage_messages:
                     await message.edit(embed=self.mainEmbed, view=self.create_view(guild_id))
-                    print("Main message updated successfully.")
                 else:
                     print("Bot does not have permission to edit messages.")
             else:
