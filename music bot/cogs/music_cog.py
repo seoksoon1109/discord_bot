@@ -36,7 +36,7 @@ class music_cog(commands.Cog):
         }
         self.FFMPEG_OPTIONS = {
             'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5',
-            'options': '-vn',
+            'options': '-vn -af "volume=0.1"',
         }
         self.ytdl = YoutubeDL(self.YDL_OPTIONS)
         asyncio.create_task(self.setup_message_and_main_message())
@@ -71,26 +71,30 @@ class music_cog(commands.Cog):
                 channel_id = data.get('channel_id')
                 main_message_id = data.get('message_id')
 
-                if channel_id and main_message_id:
-                    channel = self.bot.get_channel(int(channel_id))
-                    if channel:
-                        try:
-                            self.mainMessages[guild_id] = await channel.fetch_message(main_message_id)
-                            await self.mainMessages[guild_id].edit(embed=self.mainEmbed, view=self.create_view(guild_id = None))
-                            print(f"Main message updated successfully for guild {guild_id}.")
-                        except discord.NotFound:
-                            print(f"Main message not found for guild {guild_id}, creating a new one.")
-                            self.mainMessages[guild_id] = await channel.send(embed=self.mainEmbed, view=self.create_view(guild_id = None))
-                            self._save_main_message()  # 저장 추가
-                    else:
-                        print(f"Channel not found for guild {guild_id}.")
-                else:
+                if not channel_id or not main_message_id:
                     print(f"Message ID or Channel ID not found in settings for guild {guild_id}.")
+                    continue
+
+                channel = self.bot.get_channel(int(channel_id))
+                if not channel:
+                    print(f"Channel not found for guild {guild_id}.")
+                    continue
+
+                try:
+                    self.mainMessages[guild_id] = await channel.fetch_message(main_message_id)
+                    await self.mainMessages[guild_id].edit(embed=self.mainEmbed, view=self.create_view(guild_id=None))
+                    print(f"Main message updated successfully for guild {guild_id}.")
+                except discord.NotFound:
+                    print(f"Main message not found for guild {guild_id}, creating a new one.")
+                    self.mainMessages[guild_id] = await channel.send(embed=self.mainEmbed, view=self.create_view(guild_id=None))
+
+            self._save_main_message()  # 저장을 한 번만 실행
 
         except FileNotFoundError:
             print(f"File '{SETTINGS_FILE}' not found. Using default settings.")
         except json.JSONDecodeError:
             print(f"Error decoding JSON from file '{SETTINGS_FILE}'. Using default settings.")
+
 
     def _save_main_message(self):
         message_data = {}
