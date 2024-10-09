@@ -289,9 +289,9 @@ class music_cog(commands.Cog):
                         await interaction.response.send_message('다시 재생합니다.', delete_after=3)
                     
                     else:
-                        await interaction.response.send_message('오류발생', delete_after=3)
+                        await interaction.response.send_message('재생 중이 아닙니다.', delete_after=3)
                 else:
-                    await interaction.response.send_message('재생 중이 아닙니다.', delete_after=3)
+                    await interaction.response.send_message('오류발생', delete_after=3)
                     return
 
             elif custom_id == 'skip':
