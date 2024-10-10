@@ -18,9 +18,11 @@ class music_cog(commands.Cog):
         self.mainMessages = {}  # 각 서버별 메시지 딕셔너리
         self.is_playing = {}   # 각 서버별 플레이 여부 딕셔너리
         self.is_paused = {}    # 각 서버별 일시정지 여부 딕셔너리
+        self.is_loop = {}
         self.channel = {}      # 각 서버별 채널 정보 딕셔너리
         self.vcs = {}         # 각 서버별 음성 클라이언트 딕셔너리
         self.music_queue = {}
+        self.current_song = {}
         self.YDL_OPTIONS = {
             'format': 'bestaudio/best',
             'outtmpl': '%(extractor)s-%(id)s-%(title)s.%(ext)s',
@@ -110,8 +112,9 @@ class music_cog(commands.Cog):
         view = ui.View()
         view.add_item(ui.Button(label="⏹️", style=ButtonStyle.danger, custom_id="stop"))
         view.add_item(ui.Button(label="⏯️", style=ButtonStyle.green, custom_id="play"))
-        view.add_item(ui.Button(label="⏭️", style=ButtonStyle.secondary, custom_id="skip"))
+        view.add_item(ui.Button(label="⏭️", style=ButtonStyle.primary, custom_id="skip"))
         view.add_item(ui.Button(label="🔀", style=ButtonStyle.primary, custom_id="shuffle"))
+        view.add_item(ui.Button(label="🔁", style=ButtonStyle.primary, custom_id="loop"))
         view.add_item(self.create_select_menu(guild_id))
         return view
 
@@ -240,12 +243,12 @@ class music_cog(commands.Cog):
                 self.is_playing[guild_id] = True
                 song_data = self.music_queue[guild_id][0][0]
                 requester_name = self.music_queue[guild_id][0][1].display_name
-                self.music_queue[guild_id].pop(0)
+                self.current_song[guild_id] = self.music_queue[guild_id].pop(0)
                 loop = asyncio.get_event_loop()
                 data = await loop.run_in_executor(None, lambda: self.ytdl.extract_info(song_data['source'], download=False))
                 song_url = data['url']
                 next_song = self.music_queue[guild_id][0][0] if len(self.music_queue[guild_id]) > 0 else None
-                vcs.play(discord.FFmpegPCMAudio(song_url, **self.FFMPEG_OPTIONS), after=lambda e: asyncio.run_coroutine_threadsafe(self.play_next(), self.bot.loop))
+                vcs.play(discord.FFmpegPCMAudio(song_url, **self.FFMPEG_OPTIONS), after=lambda e: asyncio.run_coroutine_threadsafe(self.check_loop(guild_id), self.bot.loop))
                 await self.song_update(guild_id, data, requester_name, next_song)
             else:
                 self.is_playing[guild_id] = False
@@ -254,6 +257,13 @@ class music_cog(commands.Cog):
                     await message.edit(embed=self.defaultEmbed, view=self.create_view(guild_id))
                 else:
                     print(f"Main message not found for guild {guild_id}")
+    
+    async def check_loop(self, guild_id):
+        song = self.current_song[guild_id]
+        if self.is_loop[guild_id]:
+            self.music_queue[guild_id].append(song)
+        await self.play_next()
+            
 
     @commands.Cog.listener()
     async def on_interaction(self, interaction: discord.Interaction):
@@ -291,7 +301,7 @@ class music_cog(commands.Cog):
                     else:
                         await interaction.response.send_message('재생 중이 아닙니다.', delete_after=3)
                 else:
-                    await interaction.response.send_message('오류발생', delete_after=3)
+                    await interaction.response.send_message('오류 발생. 오류가 계속해서 발생할 경우 봇을 재실행 해주세요.', delete_after=3)
                     return
 
             elif custom_id == 'skip':
@@ -317,9 +327,18 @@ class music_cog(commands.Cog):
                     if self.vcs.get(guild_id):
                         self.vcs[guild_id].stop()
                     await interaction.response.send_message('선택한 곡으로 건너뜁니다.', delete_after=3)
-                    return
                 else:
                     return
+            
+            elif custom_id == 'loop':
+                if self.is_loop[guild_id]:
+                    self.is_loop[guild_id] = False
+                    await interaction.response.send_message('반복 재생이 비활성화 되었습니다.')
+                else:
+                    self.is_loop[guild_id] = True
+                    await interaction.response.send_message('반복 재생이 활성화되었습니다.')
+                
+                
 
             await self.update_main_message(guild_id)  # 추가된 코드: 업데이트
 
