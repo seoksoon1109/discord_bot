@@ -84,6 +84,7 @@ class music_cog(commands.Cog):
 
                 try:
                     self.mainMessages[guild_id] = await channel.fetch_message(main_message_id)
+                    self.is_loop[guild_id] = False
                     await self.mainMessages[guild_id].edit(embed=self.mainEmbed, view=self.create_view(guild_id=None))
                     print(f"Main message updated successfully for guild {guild_id}.")
                 except discord.NotFound:
@@ -262,6 +263,7 @@ class music_cog(commands.Cog):
         song = self.current_song[guild_id]
         if self.is_loop[guild_id]:
             self.music_queue[guild_id].append(song)
+            print("added")
         await self.play_next()
             
 
@@ -331,12 +333,16 @@ class music_cog(commands.Cog):
                     return
             
             elif custom_id == 'loop':
-                if self.is_loop[guild_id]:
-                    self.is_loop[guild_id] = False
-                    await interaction.response.send_message('반복 재생이 비활성화 되었습니다.')
+                if self.is_loop[guild_id] != None:
+                    if self.is_loop[guild_id]:
+                        self.is_loop[guild_id] = False
+                        await interaction.response.send_message('반복 재생이 비활성화 되었습니다.', delete_after=3)
+                    else:
+                        self.is_loop[guild_id] = True
+                        await interaction.response.send_message('반복 재생이 활성화되었습니다.', delete_after=3)
                 else:
                     self.is_loop[guild_id] = True
-                    await interaction.response.send_message('반복 재생이 활성화되었습니다.')
+                    await interaction.response.send_message('반복 재생이 활성화되었습니다.', delete_after=3)
                 
                 
 
