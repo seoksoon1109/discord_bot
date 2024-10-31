@@ -111,8 +111,8 @@ class music_cog(commands.Cog):
 
     def create_view(self, guild_id):
         view = ui.View()
-        view.add_item(ui.Button(label="⏹️", style=ButtonStyle.danger, custom_id="stop"))
         view.add_item(ui.Button(label="⏯️", style=ButtonStyle.green, custom_id="play"))
+        view.add_item(ui.Button(label="⏹️", style=ButtonStyle.danger, custom_id="stop"))
         view.add_item(ui.Button(label="⏭️", style=ButtonStyle.primary, custom_id="skip"))
         view.add_item(ui.Button(label="🔀", style=ButtonStyle.primary, custom_id="shuffle"))
         view.add_item(ui.Button(label="🔁", style=ButtonStyle.primary, custom_id="loop"))
