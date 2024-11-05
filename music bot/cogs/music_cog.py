@@ -13,7 +13,7 @@ class music_cog(commands.Cog):
         self.bot = bot
         self.mainEmbed = discord.Embed(title="재생목록에 노래를 추가해 보세요!", color=discord.Color(0x00FF00))
         self.mainEmbed.add_field(name="제작자", value="석순(seoksoon_)")
-        self.mainEmbed.add_field(name="사용법", value="/play")
+        self.mainEmbed.add_field(name="사용법", value="/help")
         self.defaultEmbed = self.mainEmbed
         self.mainMessages = {}  # 각 서버별 메시지 딕셔너리
         self.is_playing = {}   # 각 서버별 플레이 여부 딕셔너리
@@ -221,8 +221,11 @@ class music_cog(commands.Cog):
     @app_commands.command(name="del", description="delete a music from playlist")
     async def delete(self, interaction: discord.Interaction, index: int):
         guild_id = str(interaction.guild.id)
-        if self.music_queue[guild_id] == None or len(self.music_queue[guild_id])<index:
+        if self.music_queue[guild_id] == None:
             await interaction.response.send_message("플레이리스트가 비어있습니다!", delete_after=3)
+            return
+        elif len(self.music_queue[guild_id])<index:
+            await interaction.response.send_message("인덱스를 확인해주세요!", delete_after=3)
             return
         else:
             victim_song = self.music_queue[guild_id].pop(index-1)
