@@ -221,8 +221,11 @@ class music_cog(commands.Cog):
     @app_commands.command(name="del", description="delete a music from playlist")
     async def delete(self, interaction: discord.Interaction, index: int):
         guild_id = str(interaction.guild.id)
-        if self.music_queue[guild_id] == None or len(self.music_queue[guild_id])<index:
+        if self.music_queue[guild_id] == None:
             await interaction.response.send_message("플레이리스트가 비어있습니다!", delete_after=3)
+            return
+        elif len(self.music_queue[guild_id])<index:
+            await interaction.response.send_message("인덱스를 확인해주세요!", delete_after=3)
             return
         else:
             victim_song = self.music_queue[guild_id].pop(index-1)
