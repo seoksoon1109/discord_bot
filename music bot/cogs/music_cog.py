@@ -13,7 +13,7 @@ class music_cog(commands.Cog):
         self.bot = bot
         self.mainEmbed = discord.Embed(title="재생목록에 노래를 추가해 보세요!", color=discord.Color(0x00FF00))
         self.mainEmbed.add_field(name="제작자", value="석순(seoksoon_)")
-        self.mainEmbed.add_field(name="사용법", value="/play")
+        self.mainEmbed.add_field(name="사용법", value="/help")
         self.defaultEmbed = self.mainEmbed
         self.mainMessages = {}  # 각 서버별 메시지 딕셔너리
         self.is_playing = {}   # 각 서버별 플레이 여부 딕셔너리
