@@ -111,8 +111,8 @@ class music_cog(commands.Cog):
 
     def create_view(self, guild_id):
         view = ui.View()
-        view.add_item(ui.Button(label="⏹️", style=ButtonStyle.danger, custom_id="stop"))
         view.add_item(ui.Button(label="⏯️", style=ButtonStyle.green, custom_id="play"))
+        view.add_item(ui.Button(label="⏹️", style=ButtonStyle.danger, custom_id="stop"))
         view.add_item(ui.Button(label="⏭️", style=ButtonStyle.primary, custom_id="skip"))
         view.add_item(ui.Button(label="🔀", style=ButtonStyle.primary, custom_id="shuffle"))
         view.add_item(ui.Button(label="🔁", style=ButtonStyle.primary, custom_id="loop"))
@@ -217,6 +217,19 @@ class music_cog(commands.Cog):
                 else:
                     await self.update_main_message(guild_id)
 
+    
+    @app_commands.command(name="del", description="delete a music from playlist")
+    async def delete(self, interaction: discord.Interaction, index: int):
+        guild_id = str(interaction.guild.id)
+        if self.music_queue[guild_id] == None or len(self.music_queue[guild_id])<index:
+            await interaction.response.send_message("플레이리스트가 비어있습니다!", delete_after=3)
+            return
+        else:
+            victim_song = self.music_queue[guild_id].pop(index-1)
+            await interaction.response.send_message(f"{victim_song[0]['title']}이 플레이리스트에서 제거되었습니다.", delete_after=3)
+            await self.update_main_message(guild_id)
+
+
     async def play_music(self, interaction: discord.Interaction):
         guild_id = str(interaction.guild.id)
         if len(self.music_queue[guild_id]) > 0:
@@ -263,7 +276,6 @@ class music_cog(commands.Cog):
         song = self.current_song[guild_id]
         if self.is_loop[guild_id]:
             self.music_queue[guild_id].append(song)
-            print("added")
         await self.play_next()
             
 
