@@ -11,7 +11,7 @@ async def on_ready():
     await bot.change_presence(status=discord.Status.online)
     try:
         synced_commands = await bot.tree.sync()
-        print(f"synced{len(synced_commands)}commands loaded")
+        print(f"synced {len(synced_commands)} commands loaded")
     except Exception as e:
         print("error with syncing app_commands ", e)
     
