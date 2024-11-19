@@ -9,8 +9,8 @@ class team_cog(commands.Cog):
 
     @app_commands.command(name="팀", description="recruit teamate")
     async def recruit_team(self, interaction : discord.Interaction, capacity:int, description:str):
-        voice_channel = interaction.user.voice.channel
-        if voice_channel:
+        try:
+            voice_channel = interaction.user.voice.channel
             embed = self.mainEmbed.copy()
             embed.title = "팀원 모집"
             embed.description = f"{interaction.user.mention}님이 팀원을 모집 중 입니다."
@@ -22,8 +22,8 @@ class team_cog(commands.Cog):
             join_button = discord.ui.Button(label="채널 참가", style=discord.ButtonStyle.link, url=f"https://discord.com/channels/{interaction.guild.id}/{voice_channel.id}")
             view.add_item(join_button)
             await interaction.response.send_message(embed=embed, view=view)
-        else:
-            await interaction.response.send_message("음성채널에 접속 후 사용해주세요", ephemeral=True)
+        except AttributeError:
+            await interaction.response.send_message('음성채널에 입장한 후 사용해 주세요.', ephemeral=True)
             return
 
 
