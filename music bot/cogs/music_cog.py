@@ -203,9 +203,6 @@ class music_cog(commands.Cog):
         except AttributeError:
             await interaction.response.send_message('음성채널에 입장한 후 사용해 주세요.', delete_after=3)
             return
-
-        if self.is_paused.get(guild_id):
-            self.vcs[guild_id].resume()
         else:
             song = self.search_yt(title_or_url)
             if type(song) == type(True):
@@ -364,7 +361,7 @@ class music_cog(commands.Cog):
                 
                 
 
-            await self.update_main_message(guild_id)  # 추가된 코드: 업데이트
+            await self.update_main_message(guild_id)
 
 async def setup(bot):
     await bot.add_cog(music_cog(bot))
