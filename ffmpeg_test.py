@@ -21,7 +21,7 @@ async def test_ffmpeg_pipe():
     )
 
     # ffmpeg에 더미(0으로 채운 가짜 오디오 바이트) 조금 밀어넣고 stdin 닫기
-    fake_audio = b"\x00" * 48000 * 2 * 2 // 10
+    fake_audio = b"\x00" * (48000 * 2 * 2 // 10)
     # = 0.1초 분량 정도의 무음 PCM 데이터
     proc.stdin.write(fake_audio)
     await proc.stdin.drain()
