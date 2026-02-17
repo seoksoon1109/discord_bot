@@ -1,12 +1,96 @@
 import discord, random
 from discord.ext import commands
 from discord import ButtonStyle, SelectOption, ui, app_commands
+from datetime import datetime
 from youtubesearchpython import VideosSearch
 from yt_dlp import YoutubeDL
 import asyncio
 import json
 
+try:
+    from zoneinfo import ZoneInfo
+except Exception:
+    ZoneInfo = None
+
+
 SETTINGS_FILE = 'settings.json'
+
+class DailyMusicRecommendModal(discord.ui.Modal):
+    def __init__(self, cog):
+        super().__init__(title="오늘의 추천 음악")
+        self.cog = cog
+
+        self.song_input = discord.ui.TextInput(
+            label="추천 노래 (제목 또는 유튜브 URL)",
+            placeholder="예: 아이유 밤편지 또는 https://youtube.com/...",
+            required=True,
+            max_length=200,
+        )
+
+        # ✅ 추천 이유: 선택 입력(옵션)
+        self.reason_input = discord.ui.TextInput(
+            label="추천 이유(선택)",
+            placeholder="비워도 됩니다.",
+            style=discord.TextStyle.paragraph,
+            required=False,
+            max_length=500,
+        )
+
+        self.add_item(self.song_input)
+        self.add_item(self.reason_input)
+
+    def _today_kst_str(self) -> str:
+        if ZoneInfo is not None:
+            return datetime.now(ZoneInfo("Asia/Seoul")).strftime("%Y-%m-%d")
+        return datetime.utcnow().strftime("%Y-%m-%d")
+
+    async def on_submit(self, interaction: discord.Interaction):
+        await interaction.response.defer(ephemeral=True)
+
+        query = self.song_input.value.strip()
+        reason = (self.reason_input.value or "").strip()
+        today = self._today_kst_str()
+
+        try:
+            song = await asyncio.to_thread(self.cog.search_yt, query)
+        except Exception:
+            await interaction.followup.send(
+                "유튜브 검색에 실패했습니다. 다른 키워드나 URL로 다시 시도해 주세요.",
+                ephemeral=True,
+            )
+            return
+
+        title = song.get("title", "제목 정보 없음")
+        url = song.get("source")
+        thumb = song.get("thumbnail")
+
+        description = f"**{title}**"
+        if reason:
+            description += f"\n\n{reason}"
+
+        embed = discord.Embed(
+            title=f"{today} 오늘의 추천 음악",
+            description=description,
+            color=discord.Color.blurple(),
+        )
+
+        if thumb:
+            embed.set_image(url=thumb)
+
+        display_name = interaction.user.display_name
+        if interaction.user.display_avatar:
+            embed.set_author(name=display_name, icon_url=interaction.user.display_avatar.url)
+        else:
+            embed.set_author(name=display_name)
+
+        view = None
+        if url:
+            view = discord.ui.View()
+            view.add_item(discord.ui.Button(label="YouTube 열기", url=url))
+
+        await interaction.channel.send(embed=embed, view=view)
+
+
 
 class music_cog(commands.Cog):
     def __init__(self, bot):
@@ -45,6 +129,10 @@ class music_cog(commands.Cog):
         }
         self.ytdl = YoutubeDL(self.YDL_OPTIONS)
         asyncio.create_task(self.setup_message_and_main_message())
+
+    @app_commands.command(name="recommend", description="오늘의 추천 음악을 등록합니다.")
+    async def recommend(self, interaction: discord.Interaction):
+        await interaction.response.send_modal(DailyMusicRecommendModal(self))
 
     @commands.Cog.listener()
     async def on_voice_state_update(self, member, before, after):
